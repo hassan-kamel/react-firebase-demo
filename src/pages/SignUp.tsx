@@ -9,10 +9,13 @@ import {
   PasswordIcon,
   ConfirmPasswordIcon,
 } from '../components/icons';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { zodResolver } from '@hookform/resolvers/zod';
+import { createAuthUser } from '../config/firebase';
+import { signupAndCreateUser } from '../utils/signupWithEmail';
+import { useState } from 'react';
 
-interface ISignupForm {
+export interface ISignupForm {
   name: string;
   email: string;
   age: number;
@@ -21,6 +24,8 @@ interface ISignupForm {
 }
 
 const SignUp = () => {
+  const [emailExistError, setEmailExistError] = useState('');
+  const navigate = useNavigate();
   const schema: ZodType<ISignupForm> = z
     .object({
       name: z.string().min(3),
@@ -42,8 +47,20 @@ const SignUp = () => {
     resolver: zodResolver(schema),
   });
 
-  const onSubmit: SubmitHandler<ISignupForm> = (formData: ISignupForm) => {
+  const onSubmit: SubmitHandler<ISignupForm> = async (
+    formData: ISignupForm,
+  ) => {
     console.log(formData);
+    try {
+      const userAuth = await createAuthUser(formData).catch((error) => {
+        setEmailExistError(error.code);
+      });
+      console.log('userAuth: ', userAuth);
+      await signupAndCreateUser(userAuth, formData);
+      navigate('/');
+    } catch (error) {
+      console.log('error: ', error);
+    }
   };
 
   return (
@@ -73,7 +90,7 @@ const SignUp = () => {
             inputProps={register('email')}
             type='email'
             placeholder='Write your email'
-            error={errors.email?.message}
+            error={errors.email?.message || emailExistError}
           />
           <Input
             Icon={AgeIcon}
@@ -101,7 +118,7 @@ const SignUp = () => {
             <button
               type='submit'
               className='w-full px-4 py-2 text-base font-semibold text-center text-white transition duration-200 ease-in bg-purple-600 rounded-lg shadow-md hover:bg-purple-700 focus:ring-purple-500 focus:ring-offset-purple-200 focus:outline-none focus:ring-2 focus:ring-offset-2 '>
-              Login
+              Sign Up
             </button>
           </div>
         </form>
@@ -110,7 +127,7 @@ const SignUp = () => {
         <Link
           to='/login'
           className='inline-flex items-center text-xs font-thin text-center text-gray-500 hover:text-gray-700 dark:text-gray-100 dark:hover:text-white'>
-          <span className='ml-2'>You already have account?</span>
+          <span className='ml-2'>Already have account?</span>
         </Link>
       </div>
     </div>

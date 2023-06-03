@@ -17,7 +17,7 @@ function App() {
       <Routes>
         <Route
           path='/'
-          Component={() => (!token ? <Navigate to='/login' /> : <Home />)}
+          Component={() => (token ? <Home /> : <Navigate to='/login' />)}
         />
         <Route
           path='/login'
